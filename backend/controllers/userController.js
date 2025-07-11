@@ -5,11 +5,13 @@ import jwt from "jsonwebtoken"
 import { v2 as cloudinary } from "cloudinary"
 import doctorModel from "../models/doctorModel.js"
 import appointmentModel from "../models/appointmentModel.js"
+import axios from "axios"
+import whatsappService from "../services/whatsappService.js"
 
 // API to register user
 const registerUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, phone } = req.body;
 
         if (!name || !email || !password) {
             return res.json({ success: false, message: "Missing Details" });
@@ -25,6 +27,11 @@ const registerUser = async (req, res) => {
             return res.json({ success: false, message: "Enter a strong password" });
         }
 
+        // validating phone number (optional but if provided should be valid)
+        if (phone && !/^[+]?[0-9]{10,15}$/.test(phone.replace(/\s/g, ''))) {
+            return res.json({ success: false, message: "Enter a valid phone number" });
+        }
+
         // hashing user password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -33,6 +40,7 @@ const registerUser = async (req, res) => {
             name,
             email,
             password: hashedPassword,
+            phone: phone || "000000000" // Use provided phone or default
         };
 
         const newUser = new userModel(userData);
@@ -160,7 +168,21 @@ const bookAppointment = async (req, res) => {
         // save new slots data in docData
         await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
-        res.json({ success: true, message: 'Appointment Booked' });
+        // Send WhatsApp notification
+        const whatsappResult = await whatsappService.sendAppointmentNotification(userData, docData, slotDate, slotTime);
+        
+        if (whatsappResult.success) {
+            console.log("✅ WhatsApp notification sent successfully");
+        } else {
+            console.log("⚠️ WhatsApp notification failed, but appointment was booked");
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Appointment Booked',
+            whatsappUrl: whatsappResult.whatsappUrl,
+            whatsappSent: whatsappResult.success
+        });
 
     } catch (error) {
         console.log(error);
@@ -269,6 +291,7 @@ const rescheduleAppointment = async (req, res) => {
     }
 }
 
+// Gateway initialize
 export {
     registerUser,
     loginUser,

@@ -70,10 +70,10 @@ const AppContextProvider =(props) => {
     }
 
     // Register user function
-    const registerUser = async (name, email, password, remember = false) => {
+    const registerUser = async (name, email, password, phone, remember = false) => {
         try {
             setIsLoading(true)
-            const {data} = await axios.post(backendUrl + '/api/user/register', {name, email, password})
+            const {data} = await axios.post(backendUrl + '/api/user/register', {name, email, password, phone})
             if (data.success) {
                 setToken(data.token)
                 setRememberMe(remember)
@@ -251,9 +251,34 @@ const AppContextProvider =(props) => {
 
             if (data.success) {
                 toast.success('Appointment booked successfully!')
+                
+                // Show WhatsApp notification status
+                if (data.whatsappSent) {
+                    toast.success('📱 WhatsApp notification sent to clinic!', { duration: 4000 });
+                } else if (data.whatsappUrl) {
+                    toast.info('📋 WhatsApp notification ready - check console', { duration: 3000 });
+                }
+                
+                // Open WhatsApp with notification if URL is provided
+                if (data.whatsappUrl) {
+                    // Open WhatsApp in a new window/tab after a short delay
+                    setTimeout(() => {
+                        const confirmOpen = window.confirm(
+                            '📱 Would you like to open WhatsApp to send the appointment confirmation to +919138136007?'
+                        );
+                        if (confirmOpen) {
+                            window.open(data.whatsappUrl, '_blank');
+                        }
+                    }, 2000);
+                }
+                
                 // Refresh user appointments
                 await getUserAppointments()
-                return { success: true }
+                return { 
+                    success: true, 
+                    whatsappUrl: data.whatsappUrl,
+                    whatsappSent: data.whatsappSent
+                }
             } else {
                 toast.error(data.message)
                 return { success: false, message: data.message }
@@ -340,6 +365,61 @@ const AppContextProvider =(props) => {
         }
     }
 
+    // Razorpay payment function
+    const paymentRazorpay = async (appointmentId) => {
+        try {
+            console.log('AppContext: Initiating payment for appointment ID:', appointmentId)
+            console.log('Backend URL:', backendUrl)
+            console.log('Token:', token ? 'Present' : 'Missing')
+            
+            const { data } = await axios.post(backendUrl + '/api/user/payment-razorpay', {
+                appointmentId
+            }, {
+                headers: { token }
+            })
+
+            console.log('AppContext: Payment response:', data)
+
+            if (data.success) {
+                return { success: true, order: data.order }
+            } else {
+                console.error('AppContext: Payment failed:', data.message)
+                toast.error(data.message)
+                return { success: false, message: data.message }
+            }
+        } catch (error) {
+            console.error('AppContext: Payment error:', error)
+            console.error('AppContext: Error response:', error.response?.data)
+            toast.error(error.response?.data?.message || 'Payment failed')
+            return { success: false, message: error.response?.data?.message || 'Payment failed' }
+        }
+    }
+
+    // Verify Razorpay payment
+    const verifyRazorpay = async (razorpay_order_id) => {
+        try {
+            const { data } = await axios.post(backendUrl + '/api/user/verify-razorpay', {
+                razorpay_order_id
+            }, {
+                headers: { token }
+            })
+
+            if (data.success) {
+                toast.success('Payment successful!')
+                // Refresh appointments after payment
+                await getUserAppointments()
+                return { success: true }
+            } else {
+                toast.error(data.message)
+                return { success: false, message: data.message }
+            }
+        } catch (error) {
+            console.error('Payment verification error:', error)
+            toast.error(error.response?.data?.message || 'Payment verification failed')
+            return { success: false, message: error.response?.data?.message || 'Payment verification failed' }
+        }
+    }
+
     const value = {
         doctors,
         currencySymbol,
@@ -362,7 +442,9 @@ const AppContextProvider =(props) => {
         bookAppointment,
         getUserAppointments,
         cancelAppointment,
-        rescheduleAppointment
+        rescheduleAppointment,
+        paymentRazorpay,
+        verifyRazorpay
     }
 
     // Initialize app on mount

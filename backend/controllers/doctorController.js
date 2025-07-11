@@ -1,7 +1,9 @@
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import doctorModel from "../models/doctorModel.js"
+import userModel from "../models/userModel.js"
 import appointmentModel from "../models/appointmentModel.js"
+import { v2 as cloudinary } from "cloudinary"
 
 // API for doctor login
 const loginDoctor = async (req, res) => {
@@ -33,7 +35,25 @@ const appointmentsDoctor = async (req, res) => {
     try {
         const { docId } = req.body;
         const appointments = await appointmentModel.find({ docId });
-        res.json({ success: true, appointments });
+        
+        // Populate appointments with latest user data if needed
+        const updatedAppointments = await Promise.all(appointments.map(async (appointment) => {
+            try {
+                // Get latest user data if userData is incomplete
+                if (!appointment.userData || !appointment.userData.name) {
+                    const latestUserData = await userModel.findById(appointment.userId).select('-password');
+                    if (latestUserData) {
+                        appointment.userData = latestUserData;
+                    }
+                }
+                return appointment;
+            } catch (error) {
+                console.log('Error fetching user data for appointment:', error);
+                return appointment;
+            }
+        }));
+        
+        res.json({ success: true, appointments: updatedAppointments });
     } catch (error) {
         console.log(error);
         res.json({ success: false, message: error.message });
@@ -96,11 +116,30 @@ const doctorDashboard = async (req, res) => {
             }
         });
 
+        // Get latest 5 appointments with user data
+        const latestAppointments = await Promise.all(
+            appointments.reverse().slice(0, 5).map(async (appointment) => {
+                try {
+                    // Get latest user data if userData is incomplete
+                    if (!appointment.userData || !appointment.userData.name) {
+                        const latestUserData = await userModel.findById(appointment.userId).select('-password');
+                        if (latestUserData) {
+                            appointment.userData = latestUserData;
+                        }
+                    }
+                    return appointment;
+                } catch (error) {
+                    console.log('Error fetching user data for appointment:', error);
+                    return appointment;
+                }
+            })
+        );
+
         const dashData = {
             earnings,
             appointments: appointments.length,
             patients: patients.length,
-            latestAppointments: appointments.reverse().slice(0, 5)
+            latestAppointments
         };
 
         res.json({ success: true, dashData });
@@ -125,8 +164,32 @@ const doctorProfile = async (req, res) => {
 // API to update doctor profile data from doctor panel
 const updateDoctorProfile = async (req, res) => {
     try {
-        const { docId, fees, address, available } = req.body;
-        await doctorModel.findByIdAndUpdate(docId, { fees, address, available });
+        const { docId } = req.body;
+        const updateData = {};
+
+        // Handle text fields
+        const { name, email, degree, speciality, experience, about, fees, address, available } = req.body;
+        
+        if (name) updateData.name = name;
+        if (email) updateData.email = email;
+        if (degree) updateData.degree = degree;
+        if (speciality) updateData.speciality = speciality;
+        if (experience) updateData.experience = experience;
+        if (about) updateData.about = about;
+        if (fees) updateData.fees = fees;
+        if (address) {
+            // Parse address if it's a string, otherwise use as is
+            updateData.address = typeof address === 'string' ? JSON.parse(address) : address;
+        }
+        if (typeof available !== 'undefined') updateData.available = available;
+
+        // Handle image upload
+        if (req.file) {
+            const imageUpload = await cloudinary.uploader.upload(req.file.path, { resource_type: "image" });
+            updateData.image = imageUpload.secure_url;
+        }
+
+        await doctorModel.findByIdAndUpdate(docId, updateData);
         res.json({ success: true, message: 'Profile Updated' });
     } catch (error) {
         console.log(error);

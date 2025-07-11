@@ -9,6 +9,7 @@ const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState({})
@@ -33,6 +34,13 @@ const Login = () => {
       newErrors.name = 'Name is required'
     } else if (state === 'Sign Up' && name.trim().length < 2) {
       newErrors.name = 'Name must be at least 2 characters'
+    }
+
+    // Phone validation (only for Sign Up)
+    if (state === 'Sign Up' && !phone.trim()) {
+      newErrors.phone = 'Phone number is required'
+    } else if (state === 'Sign Up' && !/^[+]?[0-9]{10,15}$/.test(phone.replace(/\s/g, ''))) {
+      newErrors.phone = 'Please enter a valid phone number (10-15 digits)'
     }
 
     // Email validation
@@ -67,12 +75,13 @@ const Login = () => {
       
       if (state === 'Sign Up') {
         // Handle sign up with backend
-        result = await registerUser(name, email, password, rememberMe)
+        result = await registerUser(name, email, password, phone, rememberMe)
         if (result.success) {
           // Clear form
           setName('')
           setEmail('')
           setPassword('')
+          setPhone('')
           navigate('/')
         }
       } else {
@@ -150,6 +159,27 @@ const Login = () => {
                   placeholder="Enter your full name"
                 />
                 {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+              </div>
+            )}
+
+            {/* Phone Field (only for Sign Up) */}
+            {state === 'Sign Up' && (
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className={`appearance-none relative block w-full px-4 py-3 border ${
+                    errors.phone ? 'border-red-300' : 'border-gray-300'
+                  } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300`}
+                  placeholder="Enter your phone number (e.g., +919876543210)"
+                />
+                {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
               </div>
             )}
 

@@ -3,7 +3,7 @@ import { AppContext } from "../context/AppContext"
 import { useNavigate } from "react-router-dom"
 
 const MyAppointments = () => {
-  const { doctors, userAppointments, cancelAppointment, getUserAppointments, rescheduleAppointment, currencySymbol } = useContext(AppContext)
+  const { doctors, userAppointments, cancelAppointment, getUserAppointments, rescheduleAppointment, currencySymbol, paymentRazorpay, verifyRazorpay } = useContext(AppContext)
   const navigate = useNavigate()
   
   // Load appointments on component mount
@@ -86,9 +86,9 @@ const MyAppointments = () => {
     return `${hour12}:${minute} ${ampm}`
   }
 
-  const handlePayOnline = (doctorName) => {
-    alert(`Redirecting to payment gateway for Dr. ${doctorName}`)
-  }
+
+
+
 
   const handleCancelAppointment = async (appointmentId, doctorName) => {
     if (window.confirm(`Are you sure you want to cancel your appointment with Dr. ${doctorName}?`)) {
@@ -362,13 +362,6 @@ const MyAppointments = () => {
                     {/* Action Buttons */}
                     {!appointment.cancelled && !appointment.isCompleted && (
                       <div className="space-y-2">
-                        <button
-                          onClick={() => handlePayOnline(doctorInfo.name || 'Doctor')}
-                          className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 hover:scale-105 transition-all duration-300 shadow-md flex items-center justify-center gap-1 text-xs"
-                        >
-                          <span className="text-sm">💳</span>Pay Online
-                        </button>
-
                         <button
                           onClick={() => handleCancelAppointment(appointment._id, doctorInfo.name || 'Doctor')}
                           className="w-full px-4 py-2 bg-gradient-to-r from-red-400 to-red-500 text-white rounded-lg font-semibold hover:from-red-500 hover:to-red-600 hover:scale-105 transition-all duration-300 shadow-md flex items-center justify-center gap-1 text-xs"
@@ -646,10 +639,10 @@ const MyAppointments = () => {
               </div>
             </div>
             <button
-              onClick={() => window.location.href = 'tel:+917838203606'}
+              onClick={() => window.location.href = 'tel:+919138136007'}
               className="bg-white text-red-500 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-md text-sm whitespace-nowrap"
             >
-              📞 Call Now: +91 7838203606
+              📞 Call Now: +91 9138136007
             </button>
           </div>
         </div>

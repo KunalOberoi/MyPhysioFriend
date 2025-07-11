@@ -7,7 +7,7 @@ import {
     bookAppointment, 
     listAppointment, 
     cancelAppointment,
-    rescheduleAppointment 
+    rescheduleAppointment
 } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
 import upload from "../middlewares/multer.js";

@@ -7,7 +7,7 @@ import RelatedDoctors from "../components/RelatedDoctors"
 const Appointment = () => {
   const { docId } = useParams()
   const navigate = useNavigate()
-  const { doctors, currencySymbol, bookAppointment, isLoggedIn } = useContext(AppContext)
+  const { doctors, currencySymbol, bookAppointment, isLoggedIn, getUserAppointments, userData } = useContext(AppContext)
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
   const [docInfo, setDocInfo] = useState(null)
@@ -71,7 +71,7 @@ const Appointment = () => {
   }
 
   const handleBookAppointment = async () => {
-    if (!isLoggedIn) {
+    if (!isLoggedIn()) {
       alert('Please login to book an appointment')
       navigate('/login')
       return
@@ -100,14 +100,23 @@ const Appointment = () => {
         const selectedDay = daysOfWeek[selectedSlot.datetime.getDay()]
         const selectedDate = selectedSlot.datetime.getDate()
         
-        alert(`✅ Appointment booked successfully!\n\nDoctor: ${docInfo.name}\nDay: ${selectedDay}\nDate: ${selectedDate}\nTime: ${slotTime}\nFee: ${currencySymbol}${docInfo.fees}\n\nYou can view your appointment in the "My Appointments" section.`)
+        // Show success message
+        let message = `✅ Appointment booked successfully!\n\nDoctor: ${docInfo.name}\nDay: ${selectedDay}\nDate: ${selectedDate}\nTime: ${slotTime}\nFee: ${currencySymbol}${docInfo.fees}`;
+        
+        if (result.whatsappSent) {
+          message += `\n\n📱 WhatsApp notification sent automatically to +919138136007!`;
+        } else if (result.whatsappUrl) {
+          message += `\n\n📋 WhatsApp notification prepared for +919138136007.\nYou'll be prompted to send it.`;
+        }
+        
+        alert(message)
+        
+        // Navigate to appointments page
+        navigate('/my-appointments')
         
         // Reset form
         setSlotTime('')
         setSlotIndex(0)
-        
-        // Navigate to appointments page
-        navigate('/my-appointments')
       } else {
         alert(result.message || 'Failed to book appointment. Please try again.')
       }

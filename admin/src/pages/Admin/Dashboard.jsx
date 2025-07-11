@@ -9,7 +9,11 @@ const Dashboard = () => {
   // Calculate unique patients
   const getUniquePatients = () => {
     if (!appointments || appointments.length === 0) return 0
-    const uniqueUserIds = new Set(appointments.map(appointment => appointment.userId?._id || appointment.userId).filter(Boolean))
+    const uniqueUserIds = new Set(
+      appointments
+        .map(appointment => appointment.userData?._id || appointment.userId?._id || appointment.userId)
+        .filter(Boolean)
+    )
     return uniqueUserIds.size
   }
 
@@ -81,12 +85,12 @@ const Dashboard = () => {
                 <div key={appointment._id || index} className='flex items-center px-6 py-3 gap-3 hover:bg-gray-50'>
                   <img 
                     className='rounded-full w-10 h-10 object-cover' 
-                    src={appointment.docId?.image || doctor?.image || assets.doctor_icon} 
+                    src={appointment.docData?.image || appointment.docId?.image || doctor?.image || assets.doctor_icon} 
                     alt="" 
                   />
                   <div className='flex-1 text-sm'>
-                    <p className='text-gray-800 font-medium'>{appointment.userId?.name || 'Patient'}</p>
-                    <p className='text-gray-600'>Booking with Dr. {appointment.docId?.name || doctor?.name || 'Doctor'}</p>
+                    <p className='text-gray-800 font-medium'>{appointment.userData?.name || appointment.userId?.name || 'Patient'}</p>
+                    <p className='text-gray-600'>Booking with Dr. {appointment.docData?.name || appointment.docId?.name || doctor?.name || 'Doctor'}</p>
                   </div>
                   <div className='text-sm'>
                     <p className='text-gray-800 font-medium'>
