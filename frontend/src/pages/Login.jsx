@@ -1,6 +1,8 @@
-import  { useState } from 'react'
+import { useState, useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { assets } from '../assets/assets'
+import { AppContext } from '../context/AppContext'
+import { toast } from 'react-toastify'
 
 const Login = () => {
   const [state, setState] = useState('Sign Up')
@@ -10,8 +12,17 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState({})
+  const [rememberMe, setRememberMe] = useState(false)
   
   const navigate = useNavigate()
+  const { registerUser, loginUser, token } = useContext(AppContext)
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (token) {
+      navigate('/')
+    }
+  }, [token, navigate])
 
   // Validation function
   const validateForm = () => {
@@ -34,8 +45,8 @@ const Login = () => {
     // Password validation
     if (!password) {
       newErrors.password = 'Password is required'
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
+    } else if (password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters'
     }
 
     setErrors(newErrors)
@@ -52,48 +63,49 @@ const Login = () => {
     setIsLoading(true)
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      let result
       
       if (state === 'Sign Up') {
-        // Handle sign up
-        alert(`Welcome ${name}! Your account has been created successfully.`)
-        // Store user data in localStorage (in real app, you'd get this from API)
-        localStorage.setItem('user', JSON.stringify({
-          name: name,
-          email: email,
-          isLoggedIn: true
-        }))
+        // Handle sign up with backend
+        result = await registerUser(name, email, password, rememberMe)
+        if (result.success) {
+          // Clear form
+          setName('')
+          setEmail('')
+          setPassword('')
+          navigate('/')
+        }
       } else {
-        // Handle login
-        alert('Login successful! Welcome back.')
-        // Store user data in localStorage (in real app, you'd get this from API)
-        localStorage.setItem('user', JSON.stringify({
-          email: email,
-          isLoggedIn: true
-        }))
+        // Handle login with backend
+        result = await loginUser(email, password, rememberMe)
+        if (result.success) {
+          // Clear form
+          setEmail('')
+          setPassword('')
+          navigate('/')
+        }
       }
       
-      // Navigate to home page
-      navigate('/')
-      
     } catch (error) {
-      alert('Something went wrong. Please try again.')
+      console.error('Authentication error:', error)
+      toast.error('Something went wrong. Please try again.')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleGoogleLogin = () => {
-    alert('Google login integration coming soon!')
+    toast.info('Google login integration coming soon!')
+    // TODO: Implement Google OAuth integration
   }
 
   const handleForgotPassword = () => {
     if (!email.trim()) {
-      alert('Please enter your email address first')
+      toast.error('Please enter your email address first')
       return
     }
-    alert(`Password reset link has been sent to ${email}`)
+    toast.success(`Password reset link has been sent to ${email}`)
+    // TODO: Implement forgot password API call
   }
 
   return (
@@ -175,7 +187,7 @@ const Login = () => {
                   className={`appearance-none relative block w-full px-4 py-3 pr-12 border ${
                     errors.password ? 'border-red-300' : 'border-gray-300'
                   } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300`}
-                  placeholder="Enter your password"
+                  placeholder="Enter your password (min 8 characters)"
                 />
                 <button
                   type="button"
@@ -199,6 +211,8 @@ const Login = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
@@ -219,24 +233,39 @@ const Login = () => {
 
           {/* Terms & Conditions (for Sign Up) */}
           {state === 'Sign Up' && (
-            <div className="flex items-center">
-              <input
-                id="terms"
-                name="terms"
-                type="checkbox"
-                required
-                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-              />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
-                I agree to the{' '}
-                <a href="#" className="text-primary hover:text-primary/80 font-medium">
-                  Terms and Conditions
-                </a>{' '}
-                and{' '}
-                <a href="#" className="text-primary hover:text-primary/80 font-medium">
-                  Privacy Policy
-                </a>
-              </label>
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  id="terms"
+                  name="terms"
+                  type="checkbox"
+                  required
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                />
+                <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
+                  I agree to the{' '}
+                  <a href="#" className="text-primary hover:text-primary/80 font-medium">
+                    Terms and Conditions
+                  </a>{' '}
+                  and{' '}
+                  <a href="#" className="text-primary hover:text-primary/80 font-medium">
+                    Privacy Policy
+                  </a>
+                </label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  id="remember-signup"
+                  name="remember-signup"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                />
+                <label htmlFor="remember-signup" className="ml-2 block text-sm text-gray-900">
+                  Remember me on this device
+                </label>
+              </div>
             </div>
           )}
 

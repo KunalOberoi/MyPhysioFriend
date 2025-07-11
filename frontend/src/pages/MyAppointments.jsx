@@ -1,10 +1,32 @@
-import { useContext, useState } from "react"
+import { useContext, useState, useEffect } from "react"
 import { AppContext } from "../context/AppContext"
 import { useNavigate } from "react-router-dom"
 
 const MyAppointments = () => {
-  const { doctors } = useContext(AppContext)
+  const { doctors, userAppointments, cancelAppointment, getUserAppointments, rescheduleAppointment, currencySymbol } = useContext(AppContext)
   const navigate = useNavigate()
+  
+  // Load appointments on component mount
+  useEffect(() => {
+    getUserAppointments()
+  }, [])
+
+  // Helper function to format date
+  const formatAppointmentDate = (dateStr, timeStr) => {
+    const date = new Date(dateStr)
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+    return date.toLocaleDateString('en-US', options)
+  }
+
+  // Helper function to format time
+  const formatAppointmentTime = (timeStr) => {
+    return timeStr || '8:30 PM'
+  }
+
+  // Get doctor information by ID
+  const getDoctorInfo = (doctorId) => {
+    return doctors.find(doc => doc._id === doctorId) || {}
+  }
   
   // State for reschedule modal
   const [showRescheduleModal, setShowRescheduleModal] = useState(false)
@@ -68,15 +90,28 @@ const MyAppointments = () => {
     alert(`Redirecting to payment gateway for Dr. ${doctorName}`)
   }
 
-  const handleCancelAppointment = (doctorName) => {
+  const handleCancelAppointment = async (appointmentId, doctorName) => {
     if (window.confirm(`Are you sure you want to cancel your appointment with Dr. ${doctorName}?`)) {
-      alert(`Appointment with Dr. ${doctorName} has been cancelled successfully!`)
+      try {
+        const result = await cancelAppointment(appointmentId)
+        if (result.success) {
+          alert(`✅ Appointment with Dr. ${doctorName} has been cancelled successfully!`)
+          // Refresh appointments list
+          await getUserAppointments()
+        } else {
+          alert(result.message || 'Failed to cancel appointment. Please try again.')
+        }
+      } catch (error) {
+        console.error('Cancel error:', error)
+        alert('Failed to cancel appointment. Please try again.')
+      }
     }
   }
 
   // Handle reschedule button click
-  const handleRescheduleClick = (doctor, index) => {
-    setSelectedAppointment({ doctor, index })
+  const handleRescheduleClick = (appointment, index) => {
+    const doctorInfo = getDoctorInfo(appointment.docId)
+    setSelectedAppointment({ doctor: doctorInfo, index, appointment })
     setShowRescheduleModal(true)
     setRescheduleData({ date: '', time: '', reason: '' })
   }
@@ -113,23 +148,18 @@ const MyAppointments = () => {
     setIsRescheduling(true)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Get the appointment ID from the selected appointment
+      const appointmentId = selectedAppointment.appointment?._id
+      
+      if (!appointmentId) {
+        alert('Invalid appointment selected.')
+        return
+      }
 
-      // Show confirmation
-      const confirmMessage = `
-        Reschedule Confirmation:
-        
-        Doctor: Dr. ${selectedAppointment.doctor.name}
-        New Date: ${formatDate(rescheduleData.date)}
-        New Time: ${formatTime(rescheduleData.time)}
-        ${rescheduleData.reason ? `Reason: ${rescheduleData.reason}` : ''}
-        
-        Are you sure you want to reschedule this appointment?
-      `
-
-      if (window.confirm(confirmMessage)) {
-        // Success message
+      // Call backend reschedule function
+      const result = await rescheduleAppointment(appointmentId, rescheduleData.date, rescheduleData.time)
+      
+      if (result.success) {
         alert(`
           ✅ Appointment Rescheduled Successfully!
           
@@ -137,16 +167,18 @@ const MyAppointments = () => {
           📅 ${formatDate(rescheduleData.date)}
           🕐 ${formatTime(rescheduleData.time)}
           
-
           Please arrive 15 minutes before your appointment time.
         `)
         
-        // Close modal
+        // Close modal and reset form
         setShowRescheduleModal(false)
         setSelectedAppointment(null)
         setRescheduleData({ date: '', time: '', reason: '' })
+      } else {
+        alert(result.message || 'Failed to reschedule appointment. Please try again.')
       }
     } catch (error) {
+      console.error('Reschedule error:', error)
       alert('Failed to reschedule appointment. Please try again.')
     } finally {
       setIsRescheduling(false)
@@ -187,12 +219,12 @@ const MyAppointments = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 border border-blue-200 cursor-pointer">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
-                  {doctors.slice(0, 2).length}
+                  {userAppointments.length}
                 </p>
                 <p className="text-gray-600 text-xs font-medium mt-1">Total Appointments</p>
               </div>
@@ -204,7 +236,7 @@ const MyAppointments = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xl font-bold bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent">
-                  {doctors.slice(0, 2).length}
+                  {userAppointments.filter(apt => !apt.cancelled && !apt.isCompleted).length}
                 </p>
                 <p className="text-gray-600 text-xs font-medium mt-1">Upcoming</p>
               </div>
@@ -212,128 +244,181 @@ const MyAppointments = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 border border-purple-200 cursor-pointer">
+          <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-md p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 border border-indigo-200 cursor-pointer">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent">0</p>
+                <p className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent">
+                  {userAppointments.filter(apt => apt.isCompleted).length}
+                </p>
                 <p className="text-gray-600 text-xs font-medium mt-1">Completed</p>
               </div>
-              <div className="text-2xl p-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full text-white shadow-md">✅</div>
+              <div className="text-2xl p-2 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full text-white shadow-md">✅</div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-md p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 border border-red-200 cursor-pointer">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xl font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent">
+                  {userAppointments.filter(apt => apt.cancelled).length}
+                </p>
+                <p className="text-gray-600 text-xs font-medium mt-1">Cancelled</p>
+              </div>
+              <div className="text-2xl p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-full text-white shadow-md">❌</div>
             </div>
           </div>
         </div>
 
         {/* Appointments List */}
         <div className="space-y-4">
-          {doctors.slice(0, 2).map((item, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-100 hover:border-primary/20 group cursor-pointer"
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-                {/* Doctor Image Section */}
-                <div className="flex-shrink-0">
-                  <div className="relative">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-24 h-24 rounded-full object-cover border-3 border-primary/20 shadow-md group-hover:border-primary/40 transition-all duration-300"
-                    />
-                    <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-green-400 to-green-500 w-7 h-7 rounded-full border-3 border-white shadow-md flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">✓</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Doctor Info Section */}
-                <div className="flex-1">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors duration-300">
-                       {item.name}
-                    </h3>
-                    <p className="text-primary font-semibold mb-2 text-sm">{item.speciality}</p>
-
-                    {/* Address Section */}
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200 mb-3">
-                      <p className="text-xs text-gray-600 mb-1 font-semibold flex items-center">
-                        <span className="mr-1 text-sm">📍</span>Address
-                      </p>
-                      <div className="text-gray-800 space-y-0.5">
-                        <p className="font-medium text-xs">{item.address.line1}</p>
-                        <p className="text-xs">{item.address.line2}</p>
+          {userAppointments.map((appointment, index) => {
+            const doctorInfo = getDoctorInfo(appointment.docId)
+            return (
+              <div
+                key={appointment._id || index}
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-100 hover:border-primary/20 group cursor-pointer"
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                  {/* Doctor Image Section */}
+                  <div className="flex-shrink-0">
+                    <div className="relative">
+                      <img
+                        src={doctorInfo.image || '/placeholder-doctor.jpg'}
+                        alt={doctorInfo.name || 'Doctor'}
+                        className="w-24 h-24 rounded-full object-cover border-3 border-primary/20 shadow-md group-hover:border-primary/40 transition-all duration-300"
+                        onError={(e) => {
+                          e.target.src = '/placeholder-doctor.jpg'
+                        }}
+                      />
+                      <div className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-3 border-white shadow-md flex items-center justify-center ${
+                        appointment.cancelled 
+                          ? 'bg-gradient-to-r from-red-400 to-red-500' 
+                          : appointment.isCompleted
+                          ? 'bg-gradient-to-r from-blue-400 to-blue-500'
+                          : 'bg-gradient-to-r from-green-400 to-green-500'
+                      }`}>
+                        <span className="text-white text-xs font-bold">
+                          {appointment.cancelled ? '❌' : appointment.isCompleted ? '✓' : '🕐'}
+                        </span>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Date & Time Section */}
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
-                      <p className="text-xs text-blue-600 mb-1 font-semibold flex items-center">
-                        <span className="mr-1 text-sm">📅</span>Date & Time
-                      </p>
-                      <p className="text-blue-800 font-bold text-sm">25 July, 2024 | 8:30 PM</p>
-                      <p className="text-xs text-blue-600 mt-0.5">Appointment confirmed</p>
+                  {/* Doctor Info Section */}
+                  <div className="flex-1">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors duration-300">
+                        Dr. {doctorInfo.name || 'Doctor Name'}
+                      </h3>
+                      <p className="text-primary font-semibold mb-2 text-sm">{doctorInfo.speciality || 'General Physician'}</p>
+
+                      {/* Address Section */}
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200 mb-3">
+                        <p className="text-xs text-gray-600 mb-1 font-semibold flex items-center">
+                          <span className="mr-1 text-sm">📍</span>Address
+                        </p>
+                        <div className="text-gray-800 space-y-0.5">
+                          <p className="font-medium text-xs">{doctorInfo.address?.line1 || 'Clinic Address'}</p>
+                          <p className="text-xs">{doctorInfo.address?.line2 || 'City, State'}</p>
+                        </div>
+                      </div>
+
+                      {/* Date & Time Section */}
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+                        <p className="text-xs text-blue-600 mb-1 font-semibold flex items-center">
+                          <span className="mr-1 text-sm">📅</span>Date & Time
+                        </p>
+                        <p className="text-blue-800 font-bold text-sm">
+                          {formatAppointmentDate(appointment.slotDate)} | {formatAppointmentTime(appointment.slotTime)}
+                        </p>
+                        <p className="text-xs text-blue-600 mt-0.5">
+                          {appointment.cancelled 
+                            ? 'Appointment cancelled' 
+                            : appointment.isCompleted
+                            ? 'Appointment completed'
+                            : 'Appointment confirmed'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons Section */}
+                  <div className="flex flex-col gap-3 min-w-[180px]">
+                    {/* Status Badge */}
+                    <div className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center justify-center gap-1 border-2 transition-all duration-300 ${
+                      appointment.cancelled 
+                        ? 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border-red-300 hover:from-red-200 hover:to-red-300'
+                        : appointment.isCompleted
+                        ? 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border-blue-300 hover:from-blue-200 hover:to-blue-300'
+                        : 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300 hover:from-green-200 hover:to-green-300'
+                    }`}>
+                      <span className="text-sm">
+                        {appointment.cancelled ? '❌' : appointment.isCompleted ? '✅' : '🕐'}
+                      </span>
+                      {appointment.cancelled ? 'Cancelled' : appointment.isCompleted ? 'Completed' : 'Upcoming'}
+                    </div>
+
+                    {/* Action Buttons */}
+                    {!appointment.cancelled && !appointment.isCompleted && (
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => handlePayOnline(doctorInfo.name || 'Doctor')}
+                          className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 hover:scale-105 transition-all duration-300 shadow-md flex items-center justify-center gap-1 text-xs"
+                        >
+                          <span className="text-sm">💳</span>Pay Online
+                        </button>
+
+                        <button
+                          onClick={() => handleCancelAppointment(appointment._id, doctorInfo.name || 'Doctor')}
+                          className="w-full px-4 py-2 bg-gradient-to-r from-red-400 to-red-500 text-white rounded-lg font-semibold hover:from-red-500 hover:to-red-600 hover:scale-105 transition-all duration-300 shadow-md flex items-center justify-center gap-1 text-xs"
+                        >
+                          <span className="text-sm">❌</span>Cancel
+                        </button>
+
+                        <button
+                          onClick={() => handleRescheduleClick(appointment, index)}
+                          className="w-full px-4 py-2 bg-gradient-to-r from-blue-400 to-blue-500 text-white rounded-lg font-semibold hover:from-blue-500 hover:to-blue-600 hover:scale-105 transition-all duration-300 shadow-md flex items-center justify-center gap-1 text-xs"
+                        >
+                          <span className="text-sm">🔄</span>Reschedule
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Completed Appointment Info */}
+                    {appointment.isCompleted && (
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200 text-center">
+                        <p className="text-xs text-blue-700 font-semibold mb-1">
+                          ✅ Treatment Completed
+                        </p>
+                        <p className="text-xs text-blue-600">
+                          Thank you for choosing our services
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Additional Details Section */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-3 rounded-lg border border-indigo-200 text-center hover:from-indigo-100 hover:to-indigo-200 transition-all duration-300">
+                      <p className="text-indigo-600 font-semibold text-xs mb-0.5">Consultation Fee</p>
+                      <p className="text-indigo-800 font-bold text-sm">{currencySymbol}{doctorInfo.fees || '500'}</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-3 rounded-lg border border-pink-200 text-center hover:from-pink-100 hover:to-pink-200 transition-all duration-300">
+                      <p className="text-pink-600 font-semibold text-xs mb-0.5">Duration</p>
+                      <p className="text-pink-800 font-bold text-sm">30 mins</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-3 rounded-lg border border-teal-200 text-center hover:from-teal-100 hover:to-teal-200 transition-all duration-300">
+                      <p className="text-teal-600 font-semibold text-xs mb-0.5">Appointment Type</p>
+                      <p className="text-teal-800 font-bold text-sm">In-Person</p>
                     </div>
                   </div>
                 </div>
-
-                {/* Action Buttons Section */}
-                <div className="flex flex-col gap-3 min-w-[180px]">
-                  {/* Status Badge */}
-                  <div className="bg-gradient-to-r from-green-100 to-green-200 text-green-800 px-3 py-1.5 rounded-full text-xs font-bold flex items-center justify-center gap-1 border-2 border-green-300 hover:from-green-200 hover:to-green-300 transition-all duration-300">
-                    <span className="text-sm">🕐</span>Upcoming
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => handlePayOnline(item.name)}
-                      className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 hover:scale-105 transition-all duration-300 shadow-md flex items-center justify-center gap-1 text-xs"
-                    >
-                      <span className="text-sm">💳</span>Pay Online
-                    </button>
-
-                    <button
-                      onClick={() => handleCancelAppointment(item.name)}
-                      className="w-full px-4 py-2 bg-gradient-to-r from-red-400 to-red-500 text-white rounded-lg font-semibold hover:from-red-500 hover:to-red-600 hover:scale-105 transition-all duration-300 shadow-md flex items-center justify-center gap-1 text-xs"
-                    >
-                      <span className="text-sm">❌</span>Cancel
-
-                    </button>
-
-                    <button
-                      onClick={() => handleRescheduleClick(item, index)}
-                      className="w-full px-4 py-2 bg-gradient-to-r from-blue-400 to-blue-500 text-white rounded-lg font-semibold hover:from-blue-500 hover:to-blue-600 hover:scale-105 transition-all duration-300 shadow-md flex items-center justify-center gap-1 text-xs"
-                    >
-                      <span className="text-sm">🔄</span>Reschedule
-                    </button>
-                  </div>
-
-                  {/* Additional Info */}
-                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-2 rounded-lg border border-yellow-200 text-center hover:from-yellow-100 hover:to-yellow-200 transition-all duration-300">
-                    <p className="text-xs text-yellow-700 font-semibold">Reminder</p>
-                    <p className="text-xs text-yellow-600 mt-0.5">2 days to go</p>
-                  </div>
-                </div>
               </div>
-
-              {/* Additional Details Section */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-3 rounded-lg border border-indigo-200 text-center hover:from-indigo-100 hover:to-indigo-200 transition-all duration-300">
-                    <p className="text-indigo-600 font-semibold text-xs mb-0.5">Consultation Fee</p>
-                    <p className="text-indigo-800 font-bold text-sm">₹500</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-3 rounded-lg border border-pink-200 text-center hover:from-pink-100 hover:to-pink-200 transition-all duration-300">
-                    <p className="text-pink-600 font-semibold text-xs mb-0.5">Duration</p>
-                    <p className="text-pink-800 font-bold text-sm">30 mins</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-3 rounded-lg border border-teal-200 text-center hover:from-teal-100 hover:to-teal-200 transition-all duration-300">
-                    <p className="text-teal-600 font-semibold text-xs mb-0.5">Appointment Type</p>
-                    <p className="text-teal-800 font-bold text-sm">In-Person</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Reschedule Modal */}
@@ -497,7 +582,7 @@ const MyAppointments = () => {
         )}
 
         {/* Empty State (if no appointments) */}
-        {doctors.length === 0 && (
+        {userAppointments.length === 0 && (
           <div className="bg-white rounded-2xl shadow-xl p-12 text-center border border-gray-100 hover:shadow-2xl transition-all duration-300">
             <div className="text-6xl mb-6 animate-bounce">📅</div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">No Appointments Found</h3>

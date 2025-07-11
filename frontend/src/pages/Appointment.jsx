@@ -1,18 +1,20 @@
 import { useContext, useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { AppContext } from "../context/AppContext"
 import { assets } from "../assets/assets"
 import RelatedDoctors from "../components/RelatedDoctors"
 
 const Appointment = () => {
   const { docId } = useParams()
-  const { doctors, currencySymbol } = useContext(AppContext)
+  const navigate = useNavigate()
+  const { doctors, currencySymbol, bookAppointment, isLoggedIn } = useContext(AppContext)
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
   const [docInfo, setDocInfo] = useState(null)
   const [docSlots, setDocSlots] = useState([])
   const [slotIndex, setSlotIndex] = useState(0)
   const [slotTime, setSlotTime] = useState('')
+  const [isBooking, setIsBooking] = useState(false)
 
   const fetchDocInfo = async () => {
     const docInfo = doctors.find(doc => doc._id === docId)
@@ -68,20 +70,53 @@ const Appointment = () => {
     }
   }
 
-  const handleBookAppointment = () => {
+  const handleBookAppointment = async () => {
+    if (!isLoggedIn) {
+      alert('Please login to book an appointment')
+      navigate('/login')
+      return
+    }
+
     if (!slotTime) {
       alert('Please select a time slot before booking!')
       return
     }
 
-    const selectedDay = docSlots[slotIndex] && docSlots[slotIndex][0] 
-      ? daysOfWeek[docSlots[slotIndex][0].datetime.getDay()] 
-      : ''
-    const selectedDate = docSlots[slotIndex] && docSlots[slotIndex][0] 
-      ? docSlots[slotIndex][0].datetime.getDate() 
-      : ''
+    const selectedSlot = docSlots[slotIndex]?.find(slot => slot.time === slotTime)
+    if (!selectedSlot) {
+      alert('Invalid time slot selected!')
+      return
+    }
 
-    alert(`Appointment booked successfully!\n\nDoctor: ${docInfo.name}\nDay: ${selectedDay}\nDate: ${selectedDate}\nTime: ${slotTime}\nFee: ${currencySymbol}${docInfo.fees}`)
+    setIsBooking(true)
+    
+    try {
+      // Format the date and time for the backend
+      const slotDate = selectedSlot.datetime.toISOString().split('T')[0] // YYYY-MM-DD format
+      
+      const result = await bookAppointment(docId, slotDate, slotTime)
+      
+      if (result.success) {
+        const selectedDay = daysOfWeek[selectedSlot.datetime.getDay()]
+        const selectedDate = selectedSlot.datetime.getDate()
+        
+        alert(`✅ Appointment booked successfully!\n\nDoctor: ${docInfo.name}\nDay: ${selectedDay}\nDate: ${selectedDate}\nTime: ${slotTime}\nFee: ${currencySymbol}${docInfo.fees}\n\nYou can view your appointment in the "My Appointments" section.`)
+        
+        // Reset form
+        setSlotTime('')
+        setSlotIndex(0)
+        
+        // Navigate to appointments page
+        navigate('/my-appointments')
+      } else {
+        alert(result.message || 'Failed to book appointment. Please try again.')
+      }
+    } catch (error) {
+      console.error('Booking error:', error)
+      alert('Failed to book appointment. Please try again.')
+    } finally {
+      setIsBooking(false)
+    }
   }
 
   useEffect(() => {
@@ -167,9 +202,17 @@ const Appointment = () => {
 
         <button 
           onClick={handleBookAppointment}
-          className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6 hover:bg-primary/90 hover:scale-105 hover:shadow-lg transition-all duration-300 transform"
+          disabled={isBooking || !slotTime}
+          className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6 hover:bg-primary/90 hover:scale-105 hover:shadow-lg transition-all duration-300 transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
-          Book an appointment
+          {isBooking ? (
+            <span className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Booking...
+            </span>
+          ) : (
+            'Book an appointment'
+          )}
         </button>
       </div>
 

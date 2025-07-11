@@ -1,67 +1,75 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { assets } from '../assets/assets';
+import { AppContext } from '../context/AppContext';
+import { toast } from 'react-toastify';
 
 /**
- * User profile page – view and edit basic information stored in localStorage.
- *
- * Updated to allow editable profile image, streamlined badges, removed Quick
- * Actions block, improved Account Statistics, and simplified Account section.
+ * User profile page – view and edit user information from backend API.
+ * Updated to use AppContext and backend connectivity for real user data.
  */
 
 const MyProfile = () => {
-  const [user, setUser] = useState(null);
+  const { userData, updateProfile, isLoggedIn, token, backendUrl, logout } = useContext(AppContext);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    address: '',
+    address: {
+      line1: '',
+      line2: ''
+    },
     gender: '',
     dob: '',
-    picture: ''
+    image: null
   });
 
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   /* ────────────────────────────────────────────────────────────────────────
-   * Load user data from localStorage when the component mounts
+   * Load user data from AppContext when the component mounts
    * ──────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        setFormData({
-          name: parsedUser.name || '',
-          email: parsedUser.email || '',
-          phone: parsedUser.phone || '',
-          address: parsedUser.address || '',
-          gender: parsedUser.gender || '',
-          dob: parsedUser.dob || '',
-          picture: parsedUser.picture || ''
-        });
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        navigate('/login');
-      }
-    } else {
+    if (!isLoggedIn() || !token) {
       navigate('/login');
+      return;
     }
-  }, [navigate]);
+
+    if (userData) {
+      setFormData({
+        name: userData.name || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        address: userData.address || { line1: '', line2: '' },
+        gender: userData.gender || '',
+        dob: userData.dob || '',
+        image: null // This will be for new image uploads
+      });
+    }
+  }, [userData, isLoggedIn, token, navigate]);
 
   /* ────────────────────────────────────────────────────────────────────────
    * Helpers
    * ──────────────────────────────────────────────────────────────────────── */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    if (name === 'line1' || name === 'line2') {
+      setFormData(prev => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          [name]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleImageClick = () => {
@@ -73,8 +81,7 @@ const MyProfile = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setFormData(prev => ({ ...prev, picture: url }));
+      setFormData(prev => ({ ...prev, image: file }));
     }
   };
 
@@ -83,33 +90,27 @@ const MyProfile = () => {
     setIsLoading(true);
 
     try {
-      // basic validation
+      // Basic validation
       if (!formData.name.trim()) {
-        alert('Name is required');
+        toast.error('Name is required');
         return;
       }
 
       if (!formData.email.trim()) {
-        alert('Email is required');
+        toast.error('Email is required');
         return;
       }
 
-      // simulate API request
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const updatedUser = {
-        ...user,
-        ...formData,
-        lastUpdated: new Date().toISOString()
-      };
-
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      setIsEditing(false);
-      alert('Profile updated successfully!');
+      // Use the updateProfile function from AppContext
+      const result = await updateProfile(formData);
+      
+      if (result.success) {
+        setIsEditing(false);
+        toast.success('Profile updated successfully!');
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      toast.error('Failed to update profile');
     } finally {
       setIsLoading(false);
     }
@@ -117,22 +118,22 @@ const MyProfile = () => {
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    if (user) {
+    if (userData) {
       setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        address: user.address || '',
-        gender: user.gender || '',
-        dob: user.dob || '',
-        picture: user.picture || ''
+        name: userData.name || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        address: userData.address || { line1: '', line2: '' },
+        gender: userData.gender || '',
+        dob: userData.dob || '',
+        image: null
       });
     }
   };
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
-      localStorage.removeItem('user');
+      logout();
       navigate('/login');
     }
   };
@@ -151,7 +152,7 @@ const MyProfile = () => {
   /* ────────────────────────────────────────────────────────────────────────
    * Render
    * ──────────────────────────────────────────────────────────────────────── */
-  if (!user) {
+  if (!userData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
@@ -166,7 +167,15 @@ const MyProfile = () => {
         <div className="flex flex-col md:flex-row items-center gap-6">
           <div className="relative cursor-pointer hover:scale-105 transition-transform duration-300" onClick={handleImageClick}>
             <img
-              src={formData.picture || assets.profile_pic || 'https://via.placeholder.com/120'}
+              src={
+                formData.image 
+                  ? URL.createObjectURL(formData.image)
+                  : userData?.image 
+                    ? (userData.image.startsWith('http') || userData.image.startsWith('data:') 
+                        ? userData.image 
+                        : `${backendUrl}/${userData.image}`)
+                    : assets.profile_pic || 'https://via.placeholder.com/120'
+              }
               alt="Profile"
               className={`w-24 h-24 rounded-full object-cover border-4 border-primary/20 ${isEditing ? 'ring-2 ring-primary' : ''}`}
               onError={(e) => {
@@ -188,17 +197,17 @@ const MyProfile = () => {
           </div>
 
           <div className="text-center md:text-left flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{user.name}</h1>
-            <p className="text-gray-600 mb-3">{user.email}</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{userData?.name || 'Loading...'}</h1>
+            <p className="text-gray-600 mb-3">{userData?.email || 'Loading...'}</p>
 
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-              {user.verified && (
+              {userData?.verified && (
                 <span className="px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
                   ✓ Verified Account
                 </span>
               )}
               <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                {user.loginMethod === 'google' ? '🔍 Google Account' : '📧 Email Account'}
+                📧 Email Account
               </span>
             </div>
 
@@ -329,15 +338,24 @@ const MyProfile = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-gray-50 disabled:text-gray-600 resize-none hover:border-primary/50 transition-colors duration-300"
-                placeholder="Enter your complete address"
-              />
+              <div className="space-y-3">
+                <input
+                  name="line1"
+                  value={formData.address.line1}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-gray-50 disabled:text-gray-600 hover:border-primary/50 transition-colors duration-300"
+                  placeholder="Address Line 1"
+                />
+                <input
+                  name="line2"
+                  value={formData.address.line2}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-gray-50 disabled:text-gray-600 hover:border-primary/50 transition-colors duration-300"
+                  placeholder="Address Line 2 (Optional)"
+                />
+              </div>
             </div>
           </div>
         </div>

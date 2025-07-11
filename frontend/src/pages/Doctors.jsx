@@ -65,13 +65,20 @@ const Doctors = () => {
 
         {/* Doctors List */}
         <div className="w-full grid grid-cols-auto gap-4 gap-y-6">
-          {filterDoc.map((item, index) => (
+          {filterDoc && filterDoc.length > 0 ? filterDoc.map((item, index) => (
             <div
               onClick={() => navigate(`/appointment/${item._id}`)}
               className="border border-blue-200 rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500"
               key={index}
             >
-              <img className="bg-blue-50 w-full" src={item.image} alt={item.name} />
+              <img 
+                className="bg-blue-50 w-full h-48 object-cover" 
+                src={item.image} 
+                alt={item.name}
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/200x200?text=Doctor'
+                }}
+              />
               <div className="p-4">
                 <div className="flex items-center gap-2 text-sm text-center text-green-500">
                   <p className="w-2 h-2 bg-green-500 rounded-full"></p>
@@ -81,7 +88,11 @@ const Doctors = () => {
                 <p className="text-gray-600 text-sm">{item.speciality}</p>
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="col-span-full text-center py-10">
+              <p className="text-gray-500">No doctors found.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,46 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { assets } from '../assets/assets'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { AppContext } from '../context/AppContext'
 
 const Navbar = () => {
     const navigate = useNavigate();
     const [showMenu, setShowMenu] = useState(false)
-    const [token, setToken] = useState(true)
-    
-    // User data - this would typically come from context, props, or API
-    const [userData, setUserData] = useState({
-        name: '',
-        email: '',
-        profileImage: ''
-    });
-
-    // Simulate getting user data (replace with actual user data fetching)
-    useEffect(() => {
-        if (token) {
-            // This would typically fetch from localStorage, context, or API
-            const getUserData = () => {
-                // Example: Get from localStorage
-                const storedUserData = localStorage.getItem('userData');
-                if (storedUserData) {
-                    const parsedData = JSON.parse(storedUserData);
-                    setUserData({
-                        name: parsedData.name || 'User Name',
-                        email: parsedData.email || 'user@email.com',
-                        profileImage: parsedData.profileImage || assets.profile_pic
-                    });
-                } else {
-                    // Default/fallback data - replace with actual user data
-                    setUserData({
-                        name: 'John Doe', // This should come from login response
-                        email: 'john.doe@email.com', // This should come from login response
-                        profileImage: assets.profile_pic // This should come from user's uploaded image
-                    });
-                }
-            };
-            
-            getUserData();
-        }
-    }, [token]);
+    const { token, userData, logout } = useContext(AppContext)
 
     // Close mobile menu when clicking outside
     useEffect(() => {
@@ -79,19 +45,9 @@ const Navbar = () => {
 
     // Handle logout
     const handleLogout = () => {
-        setToken(false);
-        setShowMenu(false);
-        // Clear user data
-        setUserData({
-            name: '',
-            email: '',
-            profileImage: ''
-        });
-        // Clear localStorage
-        localStorage.removeItem('userData');
-        localStorage.removeItem('token');
-        // Add any additional logout logic here
-        console.log('User logged out');
+        logout()
+        navigate('/')
+        setShowMenu(false)
     };
 
     // Get user initials for fallback avatar
@@ -140,23 +96,11 @@ const Navbar = () => {
                     {token ? (
                         <div className='flex items-center gap-2 cursor-pointer group relative'>
                             {/* Dynamic Desktop Profile Image */}
-                            {userData.profileImage ? (
-                                <img 
-                                    className='w-8 h-8 rounded-full object-cover' 
-                                    src={userData.profileImage} 
-                                    alt="Profile" 
-                                    onError={(e) => {
-                                        e.target.style.display = 'none';
-                                        e.target.nextSibling.style.display = 'flex';
-                                    }}
-                                />
-                            ) : null}
-                            {/* Fallback Avatar with Initials */}
-                            <div 
-                                className={`w-8 h-8 rounded-full bg-primary text-white text-xs font-semibold flex items-center justify-center ${userData.profileImage ? 'hidden' : 'flex'}`}
-                            >
-                                {getUserInitials(userData.name)}
-                            </div>
+                            <img 
+                                className='w-8 h-8 rounded-full object-cover' 
+                                src={userData && userData.image ? userData.image : assets.profile_pic} 
+                                alt="Profile" 
+                            />
                             <img className='w-2.5' src={assets.dropdown_icon} alt="Dropdown" />
                             <div className='absolute top-10 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block'>
                                 <div className='min-w-48 bg-stone-100 rounded flex flex-col gap-4 p-4 shadow-lg'>
