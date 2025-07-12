@@ -168,10 +168,11 @@ const updateDoctorProfile = async (req, res) => {
         const updateData = {};
 
         // Handle text fields
-        const { name, email, degree, speciality, experience, about, fees, address, available } = req.body;
+        const { name, email, phone, degree, speciality, experience, about, fees, address, available } = req.body;
         
         if (name) updateData.name = name;
         if (email) updateData.email = email;
+        if (phone) updateData.phone = phone;
         if (degree) updateData.degree = degree;
         if (speciality) updateData.speciality = speciality;
         if (experience) updateData.experience = experience;

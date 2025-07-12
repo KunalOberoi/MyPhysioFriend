@@ -27,5 +27,7 @@ export const assets = {
     appointments_icon,
     earning_icon,
     patients_icon,
-    patient_icon
+    patient_icon,
+    verified_icon: doctor_icon, // placeholder
+    info_icon: appointment_icon  // placeholder
 }

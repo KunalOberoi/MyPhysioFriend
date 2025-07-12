@@ -240,4 +240,69 @@ const deleteDoctor = async (req, res) => {
     }
 }
 
-export {addDoctor,loginAdmin,allDoctors,changeAvailability,doctorList,appointmentsAdmin,appointmentCancel,appointmentComplete,deleteDoctor}
+// API to update doctor profile from admin panel
+const updateDoctor = async (req, res) => {
+    try {
+        const { docId, name, email, phone, speciality, degree, experience, about, fees, address, available } = req.body;
+        
+        // Validation
+        if (!docId) {
+            return res.json({ success: false, message: 'Doctor ID is required' });
+        }
+
+        // Check if doctor exists
+        const doctor = await doctorModel.findById(docId);
+        if (!doctor) {
+            return res.json({ success: false, message: 'Doctor not found' });
+        }
+
+        // Validate email format if provided
+        if (email && !validator.isEmail(email)) {
+            return res.json({ success: false, message: 'Please enter a valid email' });
+        }
+
+        // Check if email is already taken by another doctor
+        if (email && email !== doctor.email) {
+            const existingDoctor = await doctorModel.findOne({ email, _id: { $ne: docId } });
+            if (existingDoctor) {
+                return res.json({ success: false, message: 'Email already exists' });
+            }
+        }
+
+        const updateData = {};
+        
+        // Update fields only if provided
+        if (name) updateData.name = name;
+        if (email) updateData.email = email;
+        if (phone) updateData.phone = phone;
+        if (speciality) updateData.speciality = speciality;
+        if (degree) updateData.degree = degree;
+        if (experience) updateData.experience = experience;
+        if (about) updateData.about = about;
+        if (fees) updateData.fees = Number(fees);
+        if (address) {
+            updateData.address = typeof address === 'string' ? JSON.parse(address) : address;
+        }
+        if (typeof available !== 'undefined') updateData.available = Boolean(available);
+
+        // Handle image upload if provided
+        if (req.file) {
+            const imageUpload = await cloudinary.uploader.upload(req.file.path, { resource_type: "image" });
+            updateData.image = imageUpload.secure_url;
+        }
+
+        // Update doctor profile
+        const updatedDoctor = await doctorModel.findByIdAndUpdate(docId, updateData, { new: true });
+        
+        res.json({ 
+            success: true, 
+            message: 'Doctor profile updated successfully',
+            doctor: updatedDoctor
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+}
+
+export {addDoctor,loginAdmin,allDoctors,changeAvailability,doctorList,appointmentsAdmin,appointmentCancel,appointmentComplete,deleteDoctor,updateDoctor}

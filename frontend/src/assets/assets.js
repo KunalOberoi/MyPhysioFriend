@@ -64,23 +64,23 @@ export const specialityData = [
     },
     {
         speciality: 'Ortho Physiotherapist',
-        image: Gynecologist
+        image: General_physician
     },
     {
         speciality: 'Neuro Physiotherapist',
-        image: Dermatologist
+        image: General_physician
     },
     {
         speciality: 'Geriatric Physiotherapist',
-        image: Pediatricians
+        image: General_physician
     },
     {
         speciality: 'Pre And Post Surgery Rehabilitation',
-        image: Neurologist
+        image: General_physician
     },
     {
         speciality: 'Pediatric Physiotherapist',
-        image: Gastroenterologist
+        image: General_physician
     },
 ]
 

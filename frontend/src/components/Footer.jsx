@@ -10,7 +10,7 @@ const Footer = () => {
         {/* left section  */}
         <div>
             <img className="mb-5 w-40" src={assets.logo} alt="" />
-            <p className="w-full md:w-2/3 text-gray-600 leading-6"> Kya Likhun yahan pr bahiya btaoo</p>
+            <p className="w-full md:w-2/3 text-gray-600 leading-6"> Providing expert physiotherapy care to help you move better, feel stronger, and live pain-free.</p>
         </div>
         {/* center section  */}
         <div >
@@ -26,8 +26,8 @@ const Footer = () => {
         <div>
             <p className="text-xl font-medium mb-5">Get In Touch</p>
             <ul className="flex flex-col gap-2 text-gray-600">
-                <li>+91 90100 04545</li>
-                <li>vinaybatra@gmail.com</li>
+                <li>+919138136007</li>
+                <li>myphysiofrend@gmail.com</li>
             </ul>
         </div>
       </div>

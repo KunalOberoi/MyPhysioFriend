@@ -8,12 +8,12 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import DoctorNavbar from './components/DoctorNavbar';
 import DoctorSidebar from './components/DoctorSidebar';
+import ProfileSyncStatus from './components/ProfileSyncStatus';
 import { Route, Routes } from 'react-router-dom';
 import Dashboard from './pages/Admin/Dashboard';
 import AllAppointments from './pages/Admin/AllAppointments';
 import AddDoctor from './pages/Admin/AddDoctor';
 import DoctorsList from './pages/Admin/DoctorsList';
-import DoctorLogin from './pages/Doctor/DoctorLogin';
 import DoctorDashboard from './pages/Doctor/DoctorDashboard';
 import DoctorAppointments from './pages/Doctor/DoctorAppointments';
 import DoctorProfile from './pages/Doctor/DoctorProfile';
@@ -26,6 +26,7 @@ const {dToken} = useContext(DoctorContext)
   return aToken || dToken ? (
     <div className='bg-[#F8F9FD]'>
         <ToastContainer/>
+        <ProfileSyncStatus/>
         {aToken ? <Navbar/> : <DoctorNavbar/>}
         <div className='flex items-start'>
           {aToken ? <Sidebar/> : <DoctorSidebar/>}

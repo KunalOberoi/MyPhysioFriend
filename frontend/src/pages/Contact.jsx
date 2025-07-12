@@ -34,32 +34,26 @@ const Contact = () => {
       return
     }
 
-    // Create WhatsApp message
-    const whatsappMessage = `
-*New Contact Form Submission*
+    // Create email content
+    const emailSubject = encodeURIComponent(`Contact Form: ${formData.subject || 'General Inquiry'}`)
+    const emailBody = encodeURIComponent(`New Contact Form Submission
 
-*Name:* ${formData.name}
-*Email:* ${formData.email}
-*Phone:* ${formData.phone || 'Not provided'}
-*Subject:* ${formData.subject || 'General Inquiry'}
+Name: ${formData.name}
+Email: ${formData.email}
+Phone: ${formData.phone || 'Not provided'}
+Subject: ${formData.subject || 'General Inquiry'}
 
-*Message:*
+Message:
 ${formData.message}
 
----
-Sent from MyPhysioFriend Contact Form
-    `.trim()
+Sent from MyPhysioFriend Contact Form`)
 
-    // Send to WhatsApp
-    const phoneNumber = '917838203606' // Indian number format for WhatsApp
-    const encodedMessage = encodeURIComponent(whatsappMessage)
-    const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`
-    
-    // Open WhatsApp
-    window.open(whatsappURL, '_blank')
+    // Open email client
+    const emailURL = `mailto:myphysiofrend@gmail.com?subject=${emailSubject}&body=${emailBody}`
+    window.location.href = emailURL
 
     // Success message
-    alert(`Thank you ${formData.name}! Your message is being sent via WhatsApp. We'll get back to you within 24 hours.`)
+    alert(`Thank you ${formData.name}! Your email client will open to send your message. We'll get back to you within 24 hours.`)
     
     // Reset form
     setFormData({
@@ -73,7 +67,7 @@ Sent from MyPhysioFriend Contact Form
 
   // WhatsApp chat function
   const handleWhatsAppChat = () => {
-    const phoneNumber = '917838203606' // Indian number format for WhatsApp
+    const phoneNumber = '919138136007' // Indian number format for WhatsApp
     const message = encodeURIComponent('Hello! I need assistance with MyPhysioFriend services.')
     const whatsappURL = `https://wa.me/${phoneNumber}?text=${message}`
     window.open(whatsappURL, '_blank')
@@ -81,8 +75,8 @@ Sent from MyPhysioFriend Contact Form
 
   // Phone call function
   const handlePhoneCall = () => {
-    const phoneNumber = '7838203606'
-    window.location.href = `tel:+91${phoneNumber}`
+    const phoneNumber = '919138136007'
+    window.location.href = `tel:+${phoneNumber}`
   }
 
   return (
@@ -105,9 +99,9 @@ Sent from MyPhysioFriend Contact Form
               <div className="flex items-start gap-3 mt-2">
                 <span className="text-primary text-xl">📍</span>
                 <div>
-                  <p className="text-gray-500">123 Healthcare Avenue</p>
-                  <p className="text-gray-500">Medical District, Suite 456</p>
-                  <p className="text-gray-500">New Delhi, India 110001</p>
+                  <p className="text-gray-500">Near Poonam Sweets,</p>
+                  <p className="text-gray-500">Chawla Colony, Janta Colony,</p>
+                  <p className="text-gray-500">Rohtak, Haryana 124001</p>
                 </div>
               </div>
             </div>
@@ -117,19 +111,19 @@ Sent from MyPhysioFriend Contact Form
               <div className="flex flex-col gap-2 mt-2">
                 <div className="flex items-center gap-3">
                   <span className="text-primary text-xl">📞</span>
-                  <p className="text-gray-500">Tel: +91 7838203606</p>
+                  <p className="text-gray-500">Tel: +91 9138136007</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-primary text-xl">📱</span>
-                  <p className="text-gray-500">Mobile: +91 7838203606</p>
+                  <p className="text-gray-500">Mobile: +91 9138136007</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-primary text-xl">✉️</span>
-                  <p className="text-gray-500">Email: info@myphysiofriend.com</p>
+                  <p className="text-gray-500">Email: myphysiofrend@gmail.com</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-green-500 text-xl">💬</span>
-                  <p className="text-gray-500">WhatsApp: +91 7838203606</p>
+                  <p className="text-gray-500">WhatsApp: +91 9138136007</p>
                 </div>
               </div>
             </div>
@@ -158,7 +152,7 @@ Sent from MyPhysioFriend Contact Form
                 <span className="text-red-500 text-xl">🚨</span>
                 <div>
                   <p className="text-red-600 font-medium">24/7 Emergency Line</p>
-                  <p className="text-red-500">+91 7838203606</p>
+                  <p className="text-red-500">+91 9138136007</p>
                 </div>
               </div>
             </div>
@@ -255,8 +249,8 @@ Sent from MyPhysioFriend Contact Form
                 type="submit"
                 className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-primary/90 hover:scale-105 transition-all duration-300 font-medium flex items-center justify-center gap-2"
               >
-                <span>💬</span>
-                Send via WhatsApp
+                <span>✉️</span>
+                Send Email
               </button>
             </form>
           </div>
@@ -267,7 +261,7 @@ Sent from MyPhysioFriend Contact Form
               <div className="text-3xl mb-3">💬</div>
               <h3 className="font-semibold text-gray-800 mb-2">WhatsApp Chat</h3>
               <p className="text-sm text-gray-600 mb-3">Get instant help via WhatsApp</p>
-              <p className="text-xs text-gray-500 mb-3">+91 7838203606</p>
+              <p className="text-xs text-gray-500 mb-3">+91 9138136007</p>
               <button className="text-green-600 font-medium hover:underline">Start WhatsApp Chat</button>
             </div>
 
@@ -275,7 +269,7 @@ Sent from MyPhysioFriend Contact Form
               <div className="text-3xl mb-3">📞</div>
               <h3 className="font-semibold text-gray-800 mb-2">Call Us</h3>
               <p className="text-sm text-gray-600 mb-3">Speak directly with our team</p>
-              <p className="text-xs text-gray-500 mb-3">+91 7838203606</p>
+              <p className="text-xs text-gray-500 mb-3">+91 9138136007</p>
               <button className="text-blue-600 font-medium hover:underline">Call Now</button>
             </div>
           </div>
