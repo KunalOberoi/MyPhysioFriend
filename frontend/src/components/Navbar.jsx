@@ -95,7 +95,7 @@ const Navbar = () => {
                 <div className='hidden md:flex items-center gap-4'>
                     {/* Admin Panel Button - Always visible on desktop */}
                     <button 
-                        onClick={() => window.open('https://myphysiofriend-admin.onrender.com/', '_blank')}
+                        onClick={() => window.open('https://my-physio-friend-i58p.vercel.app/', '_blank')}
                         className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-full text-sm hover:bg-gray-700 hover:scale-105 transition-all duration-300"
                     >
                         <span>⚙️</span>
@@ -242,7 +242,7 @@ const Navbar = () => {
                         <li>
                             <button
                                 onClick={() => {
-                                    window.open('https://myphysiofriend-admin.onrender.com/', '_blank');
+                                    window.open('https://my-physio-friend-i58p.vercel.app/', '_blank');
                                     setShowMenu(false);
                                 }}
                                 className="flex items-center w-full py-4 px-4 rounded-lg text-lg font-medium transition-all duration-200 text-gray-700 hover:text-primary hover:bg-gray-50 active:bg-gray-100"
