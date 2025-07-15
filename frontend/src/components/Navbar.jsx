@@ -93,6 +93,15 @@ const Navbar = () => {
 
                 {/* Desktop Right Side */}
                 <div className='hidden md:flex items-center gap-4'>
+                    {/* Admin Panel Button - Always visible on desktop */}
+                    <button 
+                        onClick={() => window.open('http://localhost:5174', '_blank')}
+                        className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-full text-sm hover:bg-gray-700 hover:scale-105 transition-all duration-300"
+                    >
+                        <span>⚙️</span>
+                        Admin Panel
+                    </button>
+                    
                     {token ? (
                         <div className='flex items-center gap-2 cursor-pointer group relative'>
                             {/* Dynamic Desktop Profile Image */}
@@ -229,6 +238,18 @@ const Navbar = () => {
                                 <span className='ml-2'>📞</span>
                                 <span className='ml-4'>Contact Us</span>
                             </NavLink>
+                        </li>
+                        <li>
+                            <button
+                                onClick={() => {
+                                    window.open('http://localhost:5174', '_blank');
+                                    setShowMenu(false);
+                                }}
+                                className="flex items-center w-full py-4 px-4 rounded-lg text-lg font-medium transition-all duration-200 text-gray-700 hover:text-primary hover:bg-gray-50 active:bg-gray-100"
+                            >
+                                <span className='ml-2'>⚙️</span>
+                                <span className='ml-4'>Admin Panel</span>
+                            </button>
                         </li>
                     </ul>
 
