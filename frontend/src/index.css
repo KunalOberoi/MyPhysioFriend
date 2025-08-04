@@ -1,16 +1,68 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Outfit:wght@100..900&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-*{
-  font-family: Outfit;
+* {
+  font-family: "Inter", "Outfit", sans-serif;
 }
 
-.active hr{
-  @apply block
+body {
+  @apply text-gray-800 antialiased;
 }
 
-::-webkit-scrollbar{
-  @apply hidden
+.active hr {
+  @apply block;
+}
+
+::-webkit-scrollbar {
+  @apply hidden;
+}
+
+/* Hide scrollbar for horizontal scroll containers */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+/* Custom smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Enhance button animations */
+button {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+/* Loading animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Gentle pulse animation for status indicators */
+@keyframes pulse-gentle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

@@ -7,7 +7,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        'primary': '#5f6fff'
+        'primary': '#2F58A5',
+        'secondary': '#2E57A5', 
+        'accent': '#65AD29',
+        'primary-light': '#3A66B8',
+        'primary-dark': '#1F3B6B',
+        'accent-light': '#7BC138',
+        'accent-dark': '#4F8A1F'
       },
       animation: {
         'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',

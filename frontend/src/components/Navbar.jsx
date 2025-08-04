@@ -1,4 +1,3 @@
-// 98 and 246
 import { NavLink, useNavigate } from 'react-router-dom'
 import { assets } from '../assets/assets'
 import { useState, useEffect, useContext } from 'react';
@@ -63,31 +62,32 @@ const Navbar = () => {
 
     return (
         <>
-            <div className='flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400 px-4 sm:px-6 relative z-50'>
+
+            <div className='flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-200 px-4 sm:px-6 relative z-50 bg-white shadow-sm'>
                 {/* Logo */}
                 <img 
                     onClick={() => handleNavigation('/')} 
-                    className='w-32 sm:w-36 md:w-44 cursor-pointer' 
+                    className='w-32 sm:w-36 md:w-44 cursor-pointer hover:scale-105 transition-transform duration-300' 
                     src={assets.logo} 
                     alt="MyPhysioFriend" 
                 />
                 
                 {/* Desktop Navigation */}
-                <ul className='hidden md:flex items-start gap-5 font-medium'>
-                    <NavLink to='/' className={({ isActive }) => isActive ? 'text-primary' : ''}>
-                        <li className='py-1'>Home</li>
+                <ul className='hidden md:flex items-start gap-8 font-medium'>
+                    <NavLink to='/' className={({ isActive }) => isActive ? 'text-primary' : 'hover:text-primary transition-colors'}>
+                        <li className='py-2 px-1'>Home</li>
                         <hr className='border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden'/>
                     </NavLink>
-                    <NavLink to='/doctors' className={({ isActive }) => isActive ? 'text-primary' : ''}>
-                        <li className='py-1'>All Doctors</li>
+                    <NavLink to='/doctors' className={({ isActive }) => isActive ? 'text-primary' : 'hover:text-primary transition-colors'}>
+                        <li className='py-2 px-1'>All Doctors</li>
                         <hr className='border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden'/>
                     </NavLink>
-                    <NavLink to='/about' className={({ isActive }) => isActive ? 'text-primary' : ''}>
-                        <li className='py-1'>About</li>
+                    <NavLink to='/about' className={({ isActive }) => isActive ? 'text-primary' : 'hover:text-primary transition-colors'}>
+                        <li className='py-2 px-1'>About</li>
                         <hr className='border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden'/>
                     </NavLink>
-                    <NavLink to='/contact' className={({ isActive }) => isActive ? 'text-primary' : ''}>
-                        <li className='py-1'>Contact Us</li>
+                    <NavLink to='/contact' className={({ isActive }) => isActive ? 'text-primary' : 'hover:text-primary transition-colors'}>
+                        <li className='py-2 px-1'>Contact Us</li>
                         <hr className='border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden'/>
                     </NavLink>
                 </ul>
@@ -97,7 +97,7 @@ const Navbar = () => {
                     {/* Admin Panel Button - Always visible on desktop */}
                     <button 
                         onClick={() => window.open('https://my-physio-friend-i58p.vercel.app/', '_blank')}
-                        className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-full text-sm hover:bg-gray-700 hover:scale-105 transition-all duration-300"
+                        className="flex items-center gap-2 bg-primary-dark text-white px-4 py-2 rounded-full text-sm hover:bg-primary hover:scale-105 transition-all duration-300 shadow-md"
                     >
                         <span>⚙️</span>
                         Admin Panel
@@ -107,20 +107,20 @@ const Navbar = () => {
                         <div className='flex items-center gap-2 cursor-pointer group relative'>
                             {/* Dynamic Desktop Profile Image */}
                             <img 
-                                className='w-8 h-8 rounded-full object-cover' 
+                                className='w-8 h-8 rounded-full object-cover border-2 border-primary/20' 
                                 src={userData && userData.image ? userData.image : assets.profile_pic} 
                                 alt="Profile" 
                             />
                             <img className='w-2.5' src={assets.dropdown_icon} alt="Dropdown" />
                             <div className='absolute top-10 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block'>
-                                <div className='min-w-48 bg-stone-100 rounded flex flex-col gap-4 p-4 shadow-lg'>
-                                    <p onClick={() => navigate('my-profile')} className='hover:text-black cursor-pointer'>
+                                <div className='min-w-48 bg-white rounded-lg flex flex-col gap-4 p-4 shadow-xl border border-gray-100'>
+                                    <p onClick={() => navigate('my-profile')} className='hover:text-primary cursor-pointer transition-colors py-1'>
                                         My Profile
                                     </p>
-                                    <p onClick={() => navigate('my-appointments')} className='hover:text-black cursor-pointer'>
+                                    <p onClick={() => navigate('my-appointments')} className='hover:text-primary cursor-pointer transition-colors py-1'>
                                         My Appointments
                                     </p>
-                                    <p onClick={handleLogout} className='hover:text-black cursor-pointer'>
+                                    <p onClick={handleLogout} className='hover:text-red-500 cursor-pointer transition-colors py-1'>
                                         Logout
                                     </p>
                                 </div>
@@ -129,7 +129,7 @@ const Navbar = () => {
                     ) : (
                         <button 
                             onClick={() => navigate('/login')}
-                            className='bg-primary text-white px-8 py-3 rounded-full font-light hover:bg-primary/90 transition-colors'
+                            className='bg-primary text-white px-8 py-3 rounded-full font-medium hover:bg-primary-light hover:shadow-lg transition-all duration-300'
                         >
                             Create Account
                         </button>
