@@ -55,7 +55,8 @@ button {
 
 /* Gentle pulse animation for status indicators */
 @keyframes pulse-gentle {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
