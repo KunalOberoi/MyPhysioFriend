@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import doctorModel from '../models/doctorModel.js';
 import 'dotenv/config';
 
